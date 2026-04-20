@@ -62,6 +62,7 @@ export default function App() {
   const [sortMode, setSortMode] = useState<'date' | 'title'>('date');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
+  const [viewingEntry, setViewingEntry] = useState<JournalEntry | null>(null);
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
   
   // Form State
@@ -336,19 +337,20 @@ export default function App() {
           <Loader2 className="animate-spin text-ink" size={48} />
         </div>
       ) : filteredEntries.length > 0 ? (
-        <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6">
-          {filteredEntries.map((entry) => (
-            <EntryCard
-              key={entry.id}
-              entry={entry}
-              onEdit={(e) => openModal(e)}
-              onDelete={(id) => setConfirmingDeleteId(id)}
-              isConfirmingDelete={confirmingDeleteId === entry.id}
-              onConfirmDelete={() => handleDelete(entry.id)}
-              onCancelDelete={() => setConfirmingDeleteId(null)}
-            />
-          ))}
-        </div>
+              <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6">
+                {filteredEntries.map((entry) => (
+                  <EntryCard
+                    key={entry.id}
+                    entry={entry}
+                    onOpen={() => setViewingEntry(entry)}
+                    onEdit={(e) => openModal(e)}
+                    onDelete={(id) => setConfirmingDeleteId(id)}
+                    isConfirmingDelete={confirmingDeleteId === entry.id}
+                    onConfirmDelete={() => handleDelete(entry.id)}
+                    onCancelDelete={() => setConfirmingDeleteId(null)}
+                  />
+                ))}
+              </div>
       ) : (
         <div className="text-center py-24 opacity-55">
           <div className="text-5xl mb-4">✨</div>
@@ -358,6 +360,92 @@ export default function App() {
 
       {/* Modal Overlay */}
       <AnimatePresence>
+        {viewingEntry && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{opacity: 0}}
+              animate={{opacity: 1}}
+              exit={{opacity: 0}}
+              onClick={() => setViewingEntry(null)}
+              className="absolute inset-0 bg-ink/40 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{scale: 0.95, y: 20, opacity: 0}}
+              animate={{scale: 1, y: 0, opacity: 1}}
+              exit={{scale: 0.95, y: 20, opacity: 0}}
+              className="relative w-full max-w-3xl bg-card border-4 border-ink shadow-[12px_12px_0_theme(colors.border-pink)] p-6 md:p-10 max-h-[90vh] overflow-y-auto"
+            >
+              <button 
+                onClick={() => setViewingEntry(null)}
+                className="absolute top-4 right-4 pixel-btn p-2"
+              >
+                <X size={16} />
+              </button>
+
+              <div className="flex flex-col gap-6">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-xs opacity-50 italic">
+                    <Calendar size={14} /> {new Date(viewingEntry.date).toLocaleDateString('en-US', {month: 'long', day: 'numeric', year: 'numeric'})}
+                  </div>
+                  <h2 className="text-xl md:text-3xl text-ink drop-shadow-[2px_2px_0_theme(colors.border-pink)] uppercase break-words leading-tight">
+                    {viewingEntry.title}
+                  </h2>
+                  <div className="flex flex-wrap gap-2">
+                    {viewingEntry.tags.map((tag, i) => (
+                      <span key={i} className="bg-bg-secondary px-3 py-1 text-sm border border-border-pink flex items-center gap-2">
+                        <Tag size={12} className="opacity-50" /> {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {viewingEntry.image_urls.length > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {viewingEntry.image_urls.map((url, idx) => (
+                      <div key={idx} className="border-3 border-ink group overflow-hidden">
+                        <img 
+                          src={url} 
+                          alt={`entry-${idx}`} 
+                          className="w-full h-auto object-cover hover:scale-105 transition-transform duration-500"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="bg-bg p-6 md:p-8 border-3 border-ink shadow-[4px_4px_0_theme(colors.border-pink)]">
+                  <div className="text-lg md:text-xl leading-relaxed whitespace-pre-wrap opacity-90 break-words font-mono">
+                    <LinkifiedText text={viewingEntry.notes} />
+                  </div>
+                </div>
+
+                <div className="flex gap-4 pt-4 border-t-2 border-dotted border-ink">
+                  <button 
+                    onClick={() => {
+                      const entry = viewingEntry;
+                      setViewingEntry(null);
+                      openModal(entry);
+                    }} 
+                    className="pixel-btn px-6 py-2 flex items-center gap-2"
+                  >
+                    <Edit3 size={16} /> Edit This Entry
+                  </button>
+                  <button 
+                    onClick={() => {
+                      const id = viewingEntry.id;
+                      setViewingEntry(null);
+                      setConfirmingDeleteId(id);
+                    }} 
+                    className="pixel-btn-danger px-6 py-2 flex items-center gap-2"
+                  >
+                    <Trash2 size={16} /> Delete Entry
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
         {isModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div 
@@ -493,22 +581,53 @@ export default function App() {
   );
 }
 
-function EntryCard({
-  entry,
-  onEdit,
-  onDelete,
-  isConfirmingDelete,
-  onConfirmDelete,
-  onCancelDelete,
-}: {
+function LinkifiedText({text}: {text: string}) {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = text.split(urlRegex);
+
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (part.match(urlRegex)) {
+          return (
+            <a 
+              key={i} 
+              href={part} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-accent underline hover:opacity-75 break-all transition-opacity"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {part}
+            </a>
+          );
+        }
+        return part;
+      })}
+    </>
+  );
+}
+
+interface EntryCardProps {
+  key?: string;
   entry: JournalEntry;
+  onOpen: () => void;
   onEdit: (e: JournalEntry) => void;
   onDelete: (id: string) => void;
   isConfirmingDelete: boolean;
   onConfirmDelete: () => void;
   onCancelDelete: () => void;
-  key?: string;
-}) {
+}
+
+function EntryCard({
+  entry,
+  onOpen,
+  onEdit,
+  onDelete,
+  isConfirmingDelete,
+  onConfirmDelete,
+  onCancelDelete,
+}: EntryCardProps) {
   const [currentImageIdx, setCurrentImageIdx] = useState(0);
 
   const nextImg = (e: React.MouseEvent) => {
@@ -525,7 +644,8 @@ function EntryCard({
       layout
       initial={{opacity: 0, scale: 0.9}}
       animate={{opacity: 1, scale: 1}}
-      className="pixel-card break-inside-avoid relative overflow-hidden"
+      className="pixel-card break-inside-avoid relative overflow-hidden group cursor-pointer hover:shadow-[12px_12px_0_theme(colors.border-pink)] transition-shadow"
+      onClick={onOpen}
     >
       <AnimatePresence>
         {isConfirmingDelete && (
@@ -590,10 +710,22 @@ function EntryCard({
         </div>
 
         <div className="flex gap-2">
-          <button onClick={() => onEdit(entry)} className="pixel-btn p-2 flex items-center gap-1 flex-1 justify-center">
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(entry);
+            }} 
+            className="pixel-btn p-2 flex items-center gap-1 flex-1 justify-center"
+          >
             <Edit3 size={12} /> Edit
           </button>
-          <button onClick={() => onDelete(entry.id)} className="pixel-btn-danger p-2 flex items-center gap-1 flex-1 justify-center">
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(entry.id);
+            }} 
+            className="pixel-btn-danger p-2 flex items-center gap-1 flex-1 justify-center"
+          >
             <Trash2 size={12} /> Delete
           </button>
         </div>

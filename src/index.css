@@ -5,16 +5,16 @@
   --font-pixel: "Press Start 2P", system-ui, sans-serif;
   --font-mono: "VT323", monospace;
   
-  --color-bg: #fce4ec;
+  --color-bg: #fbcce2; /* Baby Pink */
   --color-bg-secondary: #f8bbd0;
-  --color-ink: #0d1b4b;
-  --color-accent: #ce93d8;
-  --color-btn: #a5d6a7;
-  --color-btn-hover: #81c784;
-  --color-danger: #ef9a9a;
-  --color-danger-hover: #e57373;
+  --color-ink: #114b5f; /* Midnight Green */
+  --color-accent: #456990; /* Steel Blue */
+  --color-btn: #e4fde1; /* Honeydew */
+  --color-btn-hover: #d1f7cd;
+  --color-danger: #f45b69; /* Crayola Red */
+  --color-danger-hover: #e44b59;
   --color-card: #fff5f8;
-  --color-border-pink: #f48fb1;
+  --color-border-pink: #6b2737; /* Wine */
 }
 
 @layer base {

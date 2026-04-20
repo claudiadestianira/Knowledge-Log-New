@@ -48,6 +48,7 @@ export default function App() {
   const [sortMode, setSortMode] = useState<'date' | 'title'>('date');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
   
   // Form State
   const [fTitle, setFTitle] = useState('');
@@ -225,13 +226,13 @@ export default function App() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Are you sure you want to delete this entry?')) return;
     try {
       const {error} = await supabase.from('journal_entries').delete().eq('id', id);
       if (error) throw error;
       setEntries((prev) => prev.filter((e) => e.id !== id));
+      setConfirmingDeleteId(null);
     } catch (err: any) {
-      alert('Delete failed: ' + err.message);
+      console.error('Delete failed:', err.message);
     }
   }
 
@@ -280,7 +281,7 @@ export default function App() {
           animate={{opacity: 1, y: 0}}
           className="text-2xl md:text-4xl text-ink drop-shadow-[3px_3px_0_theme(colors.border-pink)] tracking-widest leading-relaxed mb-4"
         >
-          ✦ Knowledge Journal ✦
+          Knowledge Journal 💗
         </motion.h1>
         <p className="font-mono text-lg md:text-xl opacity-75 max-w-2xl mx-auto">
           An infinite chamber of curiosities that transcends conventional norms of learning
@@ -326,7 +327,10 @@ export default function App() {
               key={entry.id}
               entry={entry}
               onEdit={(e) => openModal(e)}
-              onDelete={(id) => handleDelete(id)}
+              onDelete={(id) => setConfirmingDeleteId(id)}
+              isConfirmingDelete={confirmingDeleteId === entry.id}
+              onConfirmDelete={() => handleDelete(entry.id)}
+              onCancelDelete={() => setConfirmingDeleteId(null)}
             />
           ))}
         </div>
@@ -478,10 +482,16 @@ function EntryCard({
   entry,
   onEdit,
   onDelete,
+  isConfirmingDelete,
+  onConfirmDelete,
+  onCancelDelete,
 }: {
   entry: JournalEntry;
   onEdit: (e: JournalEntry) => void;
-  onDelete: (id: string) => void | Promise<void>;
+  onDelete: (id: string) => void;
+  isConfirmingDelete: boolean;
+  onConfirmDelete: () => void;
+  onCancelDelete: () => void;
   key?: string;
 }) {
   const [currentImageIdx, setCurrentImageIdx] = useState(0);
@@ -502,6 +512,23 @@ function EntryCard({
       animate={{opacity: 1, scale: 1}}
       className="pixel-card break-inside-avoid relative overflow-hidden"
     >
+      <AnimatePresence>
+        {isConfirmingDelete && (
+          <motion.div 
+            initial={{opacity: 0}}
+            animate={{opacity: 1}}
+            exit={{opacity: 0}}
+            className="absolute inset-0 z-10 bg-bg/95 flex flex-col items-center justify-center p-6 text-center gap-4"
+          >
+            <p className="font-pixel text-[8px] leading-loose">Delete this entry?<br/>This cannot be undone.</p>
+            <div className="flex gap-4">
+              <button onClick={onConfirmDelete} className="pixel-btn-danger">🗑 Delete</button>
+              <button onClick={onCancelDelete} className="pixel-btn">✕ Cancel</button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Slider */}
       {entry.image_urls.length > 0 && (
         <div className="relative h-48 bg-bg-secondary group overflow-hidden border-b-3 border-ink">

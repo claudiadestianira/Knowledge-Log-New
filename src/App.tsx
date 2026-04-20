@@ -30,7 +30,17 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // --- Gemini AI Config ---
-const ai = new GoogleGenAI({apiKey: process.env.GEMINI_API_KEY!});
+let aiInstance: GoogleGenAI | null = null;
+function getAi() {
+  if (!aiInstance) {
+    const key = process.env.GEMINI_API_KEY;
+    if (!key) {
+      throw new Error('GEMINI_API_KEY is missing. Please set it in your environment variables/secrets.');
+    }
+    aiInstance = new GoogleGenAI({apiKey: key});
+  }
+  return aiInstance;
+}
 
 interface JournalEntry {
   id: string;
@@ -246,6 +256,7 @@ export default function App() {
     setAiInsight(null);
 
     try {
+      const ai = getAi();
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: `Given this journal entry title: "${fTitle}" and notes: "${fNotes}". 

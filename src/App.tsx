@@ -52,6 +52,10 @@ interface JournalEntry {
 }
 
 export default function App() {
+  useEffect(() => {
+    console.log('✦ Knowledge Journal Initialized');
+  }, []);
+
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');

@@ -1,0 +1,86 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-pixel: "Press Start 2P", system-ui, sans-serif;
+  --font-mono: "VT323", monospace;
+  
+  --color-bg: #fce4ec;
+  --color-bg-secondary: #f8bbd0;
+  --color-ink: #0d1b4b;
+  --color-accent: #ce93d8;
+  --color-btn: #a5d6a7;
+  --color-btn-hover: #81c784;
+  --color-danger: #ef9a9a;
+  --color-danger-hover: #e57373;
+  --color-card: #fff5f8;
+  --color-border-pink: #f48fb1;
+}
+
+@layer base {
+  body {
+    @apply bg-bg text-ink font-mono min-h-screen selection:bg-accent selection:text-white;
+    background-image:
+      radial-gradient(circle at 10% 20%, #fce4ec 0%, transparent 40%),
+      radial-gradient(circle at 90% 80%, #f8bbd0 0%, transparent 40%),
+      url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='0' y='0' width='2' height='2' fill='%23f48fb1' fill-opacity='0.18'/%3E%3C/svg%3E");
+  }
+
+  h1, h2, h3, .font-pixel {
+    font-family: var(--font-pixel);
+  }
+}
+
+@utility pixel-btn {
+  @apply px-4 py-2 bg-btn border-[3px] border-ink transition-all duration-75 text-[10px] tracking-wider;
+  font-family: var(--font-pixel);
+  box-shadow: 4px 4px 0 var(--color-ink);
+
+  &:hover {
+    @apply translate-x-[2px] translate-y-[2px] bg-btn-hover;
+    box-shadow: 2px 2px 0 var(--color-ink);
+  }
+
+  &:active {
+    @apply translate-x-[4px] translate-y-[4px];
+    box-shadow: none;
+  }
+}
+
+@utility pixel-btn-danger {
+  @apply pixel-btn bg-danger;
+  &:hover {
+    @apply bg-danger-hover;
+  }
+}
+
+@utility pixel-btn-accent {
+  @apply pixel-btn bg-accent text-white;
+}
+
+@utility pixel-card {
+  @apply bg-card border-[3px] border-ink transition-all duration-150;
+  box-shadow: 5px 5px 0 var(--color-border-pink);
+
+  &:hover {
+    @apply -translate-x-[2px] -translate-y-[2px];
+    box-shadow: 7px 7px 0 var(--color-border-pink);
+  }
+}
+
+@utility pixel-input {
+  @apply bg-card border-[3px] border-ink p-2 transition-colors focus:outline-none focus:border-accent;
+  box-shadow: 3px 3px 0 var(--color-border-pink);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background-color: var(--color-bg);
+}
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-border-pink);
+  border: 2px solid var(--color-ink);
+}

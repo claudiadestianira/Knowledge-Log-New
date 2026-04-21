@@ -49,6 +49,7 @@ interface JournalEntry {
   notes: string;
   date: string;
   image_urls: string[];
+  category?: 'Learnings' | 'Ideas';
 }
 
 export default function App() {
@@ -69,6 +70,7 @@ export default function App() {
   const [fTitle, setFTitle] = useState('');
   const [fNotes, setFNotes] = useState('');
   const [fTags, setFTags] = useState('');
+  const [fCategory, setFCategory] = useState<'Learnings' | 'Ideas'>('Learnings');
   const [fImages, setFImages] = useState<{dataUrl: string; name: string}[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [modalError, setModalError] = useState('');
@@ -87,7 +89,7 @@ export default function App() {
         {event: '*', schema: 'public', table: 'journal_entries'},
         (payload) => {
           console.log('Change received!', payload);
-          // Refresh list on any change
+          // Refresh list on load
           fetchEntries();
         }
       )
@@ -106,7 +108,21 @@ export default function App() {
         .order('date', {ascending: false});
       
       if (error) throw error;
-      setEntries(data || []);
+      
+      // Process data to extract virtual category from tags
+      const processedData = (data || []).map((entry: any) => {
+        const categoryTag = entry.tags?.find((t: string) => t.startsWith('cat:'));
+        const category = categoryTag ? categoryTag.replace('cat:', '') : 'Learnings';
+        const displayTags = entry.tags?.filter((t: string) => !t.startsWith('cat:')) || [];
+        
+        return {
+          ...entry,
+          category: category as 'Learnings' | 'Ideas',
+          tags: displayTags
+        };
+      });
+
+      setEntries(processedData);
     } catch (err: any) {
       console.error('Error fetching entries:', err.message);
     } finally {
@@ -133,12 +149,14 @@ export default function App() {
       setFTitle(entry.title);
       setFTags(entry.tags.join(', '));
       setFNotes(entry.notes);
+      setFCategory(entry.category || 'Learnings');
       setFImages(entry.image_urls.map((url) => ({dataUrl: url, name: url.split('/').pop() || 'image'})));
     } else {
       setEditingEntry(null);
       setFTitle('');
       setFTags('');
       setFNotes('');
+      setFCategory('Learnings');
       setFImages([]);
     }
     setModalError('');
@@ -208,12 +226,18 @@ export default function App() {
     try {
       const entryId = editingEntry?.id || Math.random().toString(36).substring(7);
       const imageUrls = await uploadImagesToStorage(entryId, fImages);
-      const tags = fTags.split(',').map((t) => t.trim()).filter(Boolean);
+      
+      // Virtualize category by prepending it to tags
+      const tags = [
+        `cat:${fCategory}`,
+        ...fTags.split(',').map((t) => t.trim()).filter(Boolean)
+      ];
 
       const entryData = {
         title: fTitle,
         tags,
         notes: fNotes,
+        // Removed category key to avoid Supabase schema error
         image_urls: imageUrls,
         date: editingEntry?.date || new Date().toISOString(),
       };
@@ -297,7 +321,7 @@ export default function App() {
           animate={{opacity: 1, y: 0}}
           className="text-2xl md:text-4xl text-ink drop-shadow-[3px_3px_0_theme(colors.border-pink)] tracking-widest leading-relaxed mb-4"
         >
-          Knowledge Journal 💗
+          CL's Knowledge and Idea Log 💗
         </motion.h1>
         <p className="font-mono text-lg md:text-xl opacity-75 max-w-2xl mx-auto">
           An infinite chamber of curiosities that transcends conventional norms of learning
@@ -391,6 +415,11 @@ export default function App() {
                     {viewingEntry.title}
                   </h2>
                   <div className="flex flex-wrap gap-2">
+                    {viewingEntry.category && (
+                      <span className="bg-accent/20 px-3 py-1 text-sm border-2 border-accent text-accent font-bold uppercase tracking-wider">
+                        {viewingEntry.category}
+                      </span>
+                    )}
                     {viewingEntry.tags.map((tag, i) => (
                       <span key={i} className="bg-bg-secondary px-3 py-1 text-sm border border-border-pink flex items-center gap-2">
                         <Tag size={12} className="opacity-50" /> {tag}
@@ -481,6 +510,30 @@ export default function App() {
                     value={fTitle}
                     onChange={(e) => setFTitle(e.target.value)}
                   />
+                </div>
+
+                <div>
+                  <label className="block font-pixel text-[8px] mb-2">CATEGORY</label>
+                  <div className="flex gap-4">
+                    {['Learnings', 'Ideas'].map((cat) => (
+                      <label key={cat} className="flex items-center gap-2 cursor-pointer group">
+                        <input 
+                          type="radio" 
+                          name="category" 
+                          value={cat}
+                          checked={fCategory === cat}
+                          onChange={() => setFCategory(cat as 'Learnings' | 'Ideas')}
+                          className="hidden"
+                        />
+                        <div className={`w-4 h-4 border-2 border-ink flex items-center justify-center transition-colors ${fCategory === cat ? 'bg-accent' : 'bg-bg'}`}>
+                          {fCategory === cat && <div className="w-2 h-2 bg-ink" />}
+                        </div>
+                        <span className={`text-[10px] font-pixel transition-colors ${fCategory === cat ? 'text-accent' : 'opacity-70 group-hover:opacity-100'}`}>
+                          {cat.toUpperCase()}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
 
                 <div>
@@ -691,6 +744,11 @@ function EntryCard({
       )}
 
       <div className="p-4">
+        {entry.category && (
+          <div className="text-[8px] font-pixel text-accent mb-1 tracking-widest">
+            {entry.category.toUpperCase()}
+          </div>
+        )}
         <h3 className="text-[10px] tracking-tight mb-2 uppercase break-words leading-tight">{entry.title}</h3>
         
         <div className="flex flex-wrap gap-1 mb-3">

@@ -416,7 +416,7 @@ export default function App() {
                   </h2>
                   <div className="flex flex-wrap gap-2">
                     {viewingEntry.category && (
-                      <span className="bg-accent/20 px-3 py-1 text-sm border-2 border-accent text-accent font-bold uppercase tracking-wider">
+                      <span className="bg-[#fee1eb] px-3 py-1 text-sm border-2 border-accent text-accent font-bold uppercase tracking-wider shadow-[3px_3px_0_theme(colors.accent)] mb-2">
                         {viewingEntry.category}
                       </span>
                     )}
@@ -745,7 +745,7 @@ function EntryCard({
 
       <div className="p-4">
         {entry.category && (
-          <div className="text-[8px] font-pixel text-accent mb-1 tracking-widest">
+          <div className="inline-block text-[6px] font-pixel text-accent border-2 border-accent bg-[#fee1eb] px-2 py-0.5 mb-2 tracking-widest shadow-[2px_2px_0_theme(colors.accent)]">
             {entry.category.toUpperCase()}
           </div>
         )}
